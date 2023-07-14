@@ -2,13 +2,14 @@ import React, { useEffect } from 'react'
 import { useState } from 'react';
 import { ToDo } from './ToDo';
 import { TagsMenu } from './TagsMenu';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4, v4 } from 'uuid';
 
 export const Forms = () => {
     const [data, setData] = useState({})
-    const [list, setList] = useState([])
-    const [tag, setTag] = useState(["ALL"])
-    const [memory, setMemory] = useState([])
+    const [list, setList] = useState(JSON.parse(localStorage.getItem("data")) || [])
+    const [tag, setTag] = useState(JSON.parse(localStorage.getItem("tags"))||["ALL"])
+    const [memory, setMemory] = useState(JSON.parse(localStorage.getItem("data")) || [])
+    // const [done, setDone] = useState(true)
 
     const tagFilter = (tag) => {
         if (tag === "ALL") {
@@ -38,8 +39,11 @@ export const Forms = () => {
     }
     const handleSubmit = (event) => {
         event.preventDefault();
+        const id = v4()
+        const done =true
+        console.log('FORM', id);
         setList(prev => {
-            return [...prev, data]
+            return [...prev, { ...data, id: id, done: done }]
 
         })
 
@@ -52,22 +56,28 @@ export const Forms = () => {
             }
         })
         setMemory(prev => {
-            return [...prev, data]
+            return [...prev, { ...data, id: id, done: done}]
         })
 
     }
-    const handClick = (activity) => {
+    const handClick = (id) => {
         const deleteList = list.filter((list) => {
-
-            return list.activity !== activity
+            return list.id !== id
+        });
+        const deleteMemory = memory.filter((list) => {
+            return list.id !== id
         });
         setList(deleteList)
-        setMemory(deleteList);
-        const remainingTags = deleteList.map((item) => item.class);
-        const uniqueTags = ["ALL",...new Set(remainingTags)];
+        setMemory(deleteMemory);
+        const remainingTags = deleteMemory.map((item) => item.class);
+        const uniqueTags = ["ALL", ...new Set(remainingTags)];
         setTag(uniqueTags)
-        
+
     }
+    useEffect(()=>{
+        localStorage.setItem("tags",JSON.stringify(tag))
+        localStorage.setItem("data", JSON.stringify(memory))
+    },[list])
     return (
         <div>
             <form onSubmit={handleSubmit}>
@@ -89,12 +99,12 @@ export const Forms = () => {
             </form>
             <hr />
             <div className='flex justify-center'>
-                {tag.map((tag, i) => (<TagsMenu key={i} tag={tag} tagFilter={tagFilter}  />))}
+                {tag.map((tag, i) => (<TagsMenu key={i} tag={tag} tagFilter={tagFilter} />))}
             </div>
             <hr />
             <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded' onClick={handleOrden}>ORDENAR POR FECHA</button>
             <div className='flex flex-wrap gap-10 p-3'>
-                {list.map((data, i) => (<ToDo key={i} activity={data.activity} priority={data.priority} date={data.date} classe={data.class} handClick={handClick} />))
+                {list.map((data, i) => (<ToDo key={i} setMemory={setMemory} id={data.id} done={data.done} activity={data.activity} priority={data.priority} date={data.date} classe={data.class} handClick={handClick} setList={setList} />))
                 }
 
             </div>
